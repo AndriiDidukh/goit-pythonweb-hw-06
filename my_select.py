@@ -1,12 +1,6 @@
 from db import session
 from sqlalchemy.sql import func
-from models import (
-    Student,
-    Group,
-    Teacher,
-    Subject,
-    Grade,
-)
+from models import Student, Group, Subject, Grade
 
 def select_1():
     return (
@@ -31,7 +25,7 @@ def select_2(subject_id: int):
 def select_3(subject_id: int):
     return (
         session.query(Group.name, func.avg(Grade.grade))
-        .join(Student.groups)
+        .join(Student, Student.group_id == Group.id)
         .join(Grade, Grade.student_id == Student.id)
         .filter(Grade.subject_id == subject_id)
         .group_by(Group.name)
@@ -44,47 +38,53 @@ def select_4():
 def select_5(teacher_id: int):
     return (
         session.query(Subject.name)
-        .join(Subject.teachers)
-        .filter(Teacher.id == teacher_id)
+        .filter(Subject.teacher_id == teacher_id)
         .all()
     )
 
 def select_6(group_id: int):
     return (
         session.query(Student.name)
-        .join(Student.groups)
-        .filter(Group.id == group_id)
+        .filter(Student.group_id == group_id)
         .all()
     )
 
 def select_7(group_id: int, subject_id: int):
     return (
         session.query(Student.name, Grade.grade)
-        .join(Grade, Grade.student_id == Student.id)
-        .join(Student.groups)
-        .filter(Group.id == group_id, Grade.subject_id == subject_id)
+        .join(Grade)
+        .filter(
+            Student.group_id == group_id,
+            Grade.subject_id == subject_id,
+        )
         .all()
     )
 
 def select_8(teacher_id: int):
     return (
         session.query(func.avg(Grade.grade))
-        .join(Subject.teachers)
-        .join(Grade, Grade.subject_id == Subject.id)
-        .filter(Teacher.id == teacher_id)
+        .join(Subject, Grade.subject_id == Subject.id)
+        .filter(Subject.teacher_id == teacher_id)
         .scalar()
     )
 
 def select_9(student_id: int):
     return (
-        session.query(Subject).join(Grade).filter(Grade.student_id == student_id).all()
+        session.query(Subject)
+        .join(Grade)
+        .filter(Grade.student_id == student_id)
+        .distinct()
+        .all()
     )
 
 def select_10(student_id: int, teacher_id: int):
     return (
         session.query(Subject)
         .join(Grade)
-        .join(Subject.teachers)
-        .filter(Grade.student_id == student_id, Teacher.id == teacher_id)
+        .filter(
+            Grade.student_id == student_id,
+            Subject.teacher_id == teacher_id,
+        )
+        .distinct()
         .all()
     )
